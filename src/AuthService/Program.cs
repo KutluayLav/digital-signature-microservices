@@ -1,55 +1,81 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using AuthService.Config;
-using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Strongly typed configuration
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
-var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
+// --------------------
+// Configuration
+// --------------------
+builder.Services.Configure<JwtOptions>(
+    builder.Configuration.GetSection("Jwt"));
 
-// Add Authentication & Authorization
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+var jwtOptions = builder.Configuration
+    .GetSection("Jwt")
+    .Get<JwtOptions>()!;
+
+// --------------------
+// Authentication
+// --------------------
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = jwtOptions.Authority;     // Keycloak realm URL
-        options.Audience = jwtOptions.Audience;       // token aud
-        options.RequireHttpsMetadata = false;        // local testing
+        options.Authority = jwtOptions.Authority;
+        options.Audience = jwtOptions.Audience;
+        options.RequireHttpsMetadata = false; // local için
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Authority,
+
             ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true
         };
 
-        // Logging for JWT events
+        // DEBUG & LOG
         options.Events = new JwtBearerEvents
         {
             OnAuthenticationFailed = context =>
             {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogError(context.Exception, "JWT Authentication Failed");
+                Console.WriteLine("❌ Authentication failed");
+                Console.WriteLine(context.Exception);
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("Token successfully validated for {user}", context.Principal.Identity?.Name);
+                Console.WriteLine("✅ Token validated");
+                Console.WriteLine($"User: {context.Principal?.Identity?.Name}");
                 return Task.CompletedTask;
             }
         };
     });
 
-builder.Services.AddAuthorization();
+// --------------------
+// Authorization
+// --------------------
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policy =>
+        policy.RequireRole("ADMIN"));
+});
+
+// --------------------
+// Controllers
+// --------------------
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Middleware pipeline
+// --------------------
+// Middleware Pipeline
+// --------------------
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

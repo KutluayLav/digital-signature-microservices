@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using AuthService.Config;
+using System.Security.Claims;
+using System.Text.Json;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +25,7 @@ builder.Services
     .AddJwtBearer(options =>
     {
         options.Authority = jwtOptions.Authority;
-        options.Audience = jwtOptions.Audience;
+        //options.Audience = jwtOptions.Audience;
         options.RequireHttpsMetadata = false; // local için
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -30,29 +33,52 @@ builder.Services
             ValidateIssuer = true,
             ValidIssuer = jwtOptions.Authority,
 
-            ValidateAudience = true,
-            ValidAudience = jwtOptions.Audience,
+            ValidateAudience = false, // after local testing will be true
+            //ValidAudience = jwtOptions.Audience,
 
             ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
+            ValidateIssuerSigningKey = true,
+
+            NameClaimType = "preferred_username"  // for getting username
         };
 
         // DEBUG & LOG
         options.Events = new JwtBearerEvents
+{
+    OnAuthenticationFailed = context =>
+    {
+        Console.WriteLine("❌ Authentication failed");
+        Console.WriteLine(context.Exception);
+        return Task.CompletedTask;
+    },
+
+    OnTokenValidated = context =>
+    {
+        var identity = context.Principal!.Identity as ClaimsIdentity;
+
+        //  KEYCLOAK REALM ROLES → .NET ROLES
+        var realmAccess = context.Principal.FindFirst("realm_access");
+        if (realmAccess != null)
         {
-            OnAuthenticationFailed = context =>
+            var roles = JsonDocument.Parse(realmAccess.Value)
+                .RootElement
+                .GetProperty("roles")
+                .EnumerateArray();
+
+            foreach (var role in roles)
             {
-                Console.WriteLine("❌ Authentication failed");
-                Console.WriteLine(context.Exception);
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                Console.WriteLine("✅ Token validated");
-                Console.WriteLine($"User: {context.Principal?.Identity?.Name}");
-                return Task.CompletedTask;
+                identity!.AddClaim(
+                    new Claim(ClaimTypes.Role, role.GetString()!)
+                );
             }
+        }
+
+        Console.WriteLine("✅ Token validated");
+        Console.WriteLine($"User: {context.Principal.Identity!.Name}");
+        return Task.CompletedTask;
+             }
         };
+
     });
 
 // --------------------

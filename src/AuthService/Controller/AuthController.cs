@@ -17,7 +17,7 @@ namespace AuthService.Controllers
             return Ok("This is a public endpoint, no authentication required.");
         }
 
-        // Protected endpoint (requires any valid token)
+        // Protected endpoint (requires any valid token) 
         [HttpGet("protected")]
         [Authorize]
         public IActionResult ProtectedEndpoint()

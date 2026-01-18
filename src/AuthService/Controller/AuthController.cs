@@ -29,7 +29,7 @@ namespace AuthService.Controllers
         // Role-based endpoint (requires ROLE_ADMIN)
         [HttpGet("admin")]
         [Authorize(Roles = "ROLE_ADMIN")]
-        public IActionResult AdminEndpoint()
+         public IActionResult AdminEndpoint()
         {
             var user = new UserModel
             {

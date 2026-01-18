@@ -1,0 +1,19 @@
+# OS
+.DS_Store
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+
+# Secrets & Keys
+**/Keys/
+*.pem
+*.key
+
+# Environment
+appsettings.Development.json
+

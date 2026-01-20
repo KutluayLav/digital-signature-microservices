@@ -1,22 +1,22 @@
-using SignatureService.Security;
 using SignatureService.Services;
+using SignatureService.Services.Crypto;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Controllers
 builder.Services.AddControllers();
 
-// DI
-builder.Services.AddScoped<IHashService, HashService>();
+// Dependency Injection
+builder.Services.AddScoped<IRsaSignatureService, RsaSignatureService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 
 var app = builder.Build();
 
 app.UseRouting();
 
-// AUTH NOT WORKING YET
+// Auth not working yet 
 // app.UseAuthentication();
 // app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();

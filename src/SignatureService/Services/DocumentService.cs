@@ -1,18 +1,19 @@
-using SignatureService.Security;
+using SignatureService.Services.Crypto;
 
 namespace SignatureService.Services;
 
 public class DocumentService : IDocumentService
 {
-    private readonly IHashService _hashService;
+    private readonly IRsaSignatureService _rsa;
 
-    public DocumentService(IHashService hashService)
+    public DocumentService(IRsaSignatureService rsa)
     {
-        _hashService = hashService;
+        _rsa = rsa;
     }
 
     public string SignDocument(string content)
-    {
-        return _hashService.ComputeHash(content);
-    }
+        => _rsa.Sign(content);
+
+    public bool VerifyDocument(string content, string signature)
+        => _rsa.Verify(content, signature);
 }

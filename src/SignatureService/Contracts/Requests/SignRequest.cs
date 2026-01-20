@@ -1,4 +1,4 @@
-namespace SignatureService.Contracts;
+namespace SignatureService.Contracts.Requests;
 
 public class SignRequest
 {

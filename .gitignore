@@ -17,3 +17,6 @@ obj/
 # Environment
 appsettings.Development.json
 
+# RSA keys
+keys/private.pem
+
